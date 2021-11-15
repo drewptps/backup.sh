@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 #2021-11-14 - Drew Petipas - This script will pull data using rsync over SSH to the backup server. This bash script is called as a cron job by root.
 
-# VARIABLES CONF
-
+# Call script for custom alert - alert that script has started. If I don't see an alert for success, I know something went wrong.
 bash ./backup_alert_start.sh
 
+# Variables .conf
 source backup.conf >> /dev/null
+
+# Test that backup.conf was sourced
 if [ $? != 0 ]; then
 	echo -e "$(date "+%F %T") [ERROR $?] backup.conf is missing."
 	exit 1
@@ -17,7 +19,6 @@ if [ $? != 0 ]; then
 	echo -e "$(date "+%F %T") [ERROR $?] Remote server is down." >> $log_location
 	exit 1
 fi
-
 
 # Test if SSH is up
 ssh -q $remote_user@$remote_server exit
@@ -35,6 +36,7 @@ echo -e "$(date "+%F %T") [END] Backup ended." >> $log_location
 # Check backup exit value
 if [ $rsync_exit = 0 ]; then
 	echo -e "$(date "+%F %T") [SUCCESS] Backup completed successfully." >> $log_location
+	# Call script for custom alert - alert the the backup was successful.
 	bash ./backup_alert_success.sh
 	exit 0
 else
