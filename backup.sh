@@ -5,41 +5,41 @@
 bash ./backup_alert_start.sh
 
 # Variables .conf
-source backup.conf >> /dev/null
+source backup.conf
 
 # Test that backup.conf was sourced
 if [ $? != 0 ]; then
-	echo -e "$(date "+%F %T") [ERROR $?] backup.conf is missing."
+	echo "$(date "+%F %T") [ERROR $?] backup.conf is missing." >> $log_location
 	exit 1
 fi
 
 # Test if host is pingable
 ping -c 1 $remote_server >> /dev/null
 if [ $? != 0 ]; then
-	echo -e "$(date "+%F %T") [ERROR $?] Remote server is down." >> $log_location
+	echo "$(date "+%F %T") [ERROR $?] Remote server is down." >> $log_location
 	exit 1
 fi
 
 # Test if SSH is up
 ssh -q $remote_user@$remote_server exit
 if [ $? = 255 ]; then
-	echo -e"$(date "+%F %T") [ERROR $?] SSH is down." >> $log_location
+	echo "$(date "+%F %T") [ERROR $?] SSH is down." >> $log_location
 	exit 1
 fi
 
 # Begin backup
-echo -e "$(date "+%F %T") [START] Backup started." >> $log_location
-rsync --archive --quiet --ignore-existing --delete-during --exclude $exclude --compress $remote_user@$remote_server:$remote_dir/* $backup_dir
+echo "$(date "+%F %T") [START] Backup started." >> $log_location
+rsync --quiet --archive --ignore-existing --delete-during --exclude $exclude --compress $remote_user@$remote_server:$remote_dir/* $backup_dir >> /dev/null
 rsync_exit=$?
-echo -e "$(date "+%F %T") [END] Backup ended." >> $log_location
+echo "$(date "+%F %T") [END] Backup ended." >> $log_location
 
 # Check backup exit value
 if [ $rsync_exit = 0 ]; then
-	echo -e "$(date "+%F %T") [SUCCESS] Backup completed successfully." >> $log_location
-	# Call script for custom alert - alert the the backup was successful.
+	echo "$(date "+%F %T") [SUCCESS] Backup completed successfully." >> $log_location
+	# Call script for custom alert - alert that the backup was successful.
 	bash ./backup_alert_success.sh
 	exit 0
 else
-	echo -e "$(date "+%F %T") [ERROR $rsync_exit] Backup failed." >> $log_location
+	echo "$(date "+%F %T") [ERROR $rsync_exit] Backup failed." >> $log_location
 	exit 1
 fi
